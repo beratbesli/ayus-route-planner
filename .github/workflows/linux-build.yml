@@ -32,12 +32,12 @@ jobs:
         run: |
           ./paketle.sh
       - name: Upload Debian Package Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ayus-debian-package
           path: dist/*.deb
       - name: Upload AppImage Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ayus-appimage
           path: dist/*.AppImage
