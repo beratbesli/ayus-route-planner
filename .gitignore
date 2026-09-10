@@ -21,3 +21,4 @@ dist/
 .pytest-tmp/
 dist/
 build/
+.cache/

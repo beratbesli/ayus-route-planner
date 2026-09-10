@@ -111,6 +111,17 @@ def choose_endpoints(
     for component_index, component in enumerate(nx.connected_components(graph)):
         for node in component:
             node_to_component[node] = component_index
+    # The planner's anchors (and explicit user targets) are already selected
+    # from safe cells. Preserve them when they share a connected component;
+    # moving an endpoint toward the interior can otherwise make a clear image
+    # start at (0, 2), for example, simply because that shortens the graph
+    # path by a few pixels.
+    if (
+        start_target in graph
+        and end_target in graph
+        and node_to_component[start_target] == node_to_component[end_target]
+    ):
+        return start_target, end_target
     starts = _rank_candidates(graph, start_target, risk_map, clearance_map)
     ends = _rank_candidates(graph, end_target, risk_map, clearance_map)
     best = (float("inf"), None, None)
