@@ -1,2 +1,1 @@
--r requirements.txt
-pyinstaller>=6.10,<7.0
+.[build]

@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>ayus.desktop</id>
+  <id>io.github.beratbesli.AYUS</id>
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
   <name>A.Y.U.S.</name>
   <summary>Görüntü tabanlı afet rota planlama prototipi</summary>
+  <url type="homepage">https://github.com/beratbesli/A.Y.U.S.</url>
+  <developer id="io.github.beratbesli">
+    <name>Berat Besli</name>
+  </developer>
+  <content_rating type="oars-1.1" />
   <description>
     <p>
       A.Y.U.S., afet sonrası acil durum durumlarında görüntü analizi yaparak
       göreli risk haritası çıkaran ve güvenli rota alternatifleri hesaplayan masaüstü uygulamasıdır.
     </p>
   </description>
-  <launchable type="desktop-id">ayus.desktop</launchable>
+  <launchable type="desktop-id">io.github.beratbesli.AYUS.desktop</launchable>
   <provides>
     <binary>ayus</binary>
   </provides>

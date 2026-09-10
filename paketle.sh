@@ -79,12 +79,13 @@ exec /usr/lib/ayus/A.Y.U.S "$@"
 INNER_EOF
 chmod 755 "${DEB_ROOT}/usr/bin/ayus"
 
-cp assets/ayus.desktop "${DEB_ROOT}/usr/share/applications/ayus.desktop"
-chmod 644 "${DEB_ROOT}/usr/share/applications/ayus.desktop"
+DESKTOP_ID="io.github.beratbesli.AYUS.desktop"
+cp "assets/${DESKTOP_ID}" "${DEB_ROOT}/usr/share/applications/${DESKTOP_ID}"
+chmod 644 "${DEB_ROOT}/usr/share/applications/${DESKTOP_ID}"
 
 if [ -f "assets/ayus.appdata.xml" ]; then
-    cp assets/ayus.appdata.xml "${DEB_ROOT}/usr/share/metainfo/ayus.appdata.xml"
-    chmod 644 "${DEB_ROOT}/usr/share/metainfo/ayus.appdata.xml"
+    cp assets/ayus.appdata.xml "${DEB_ROOT}/usr/share/metainfo/io.github.beratbesli.AYUS.appdata.xml"
+    chmod 644 "${DEB_ROOT}/usr/share/metainfo/io.github.beratbesli.AYUS.appdata.xml"
 fi
 
 cp assets/ayus.png "${DEB_ROOT}/usr/share/icons/hicolor/256x256/apps/ayus.png"
@@ -129,11 +130,11 @@ cp dist/A.Y.U.S "${APPDIR}/usr/bin/A.Y.U.S"
 chmod 755 "${APPDIR}/usr/bin/A.Y.U.S"
 ln -sf A.Y.U.S "${APPDIR}/usr/bin/ayus"
 
-cp assets/ayus.desktop "${APPDIR}/ayus.desktop"
-cp assets/ayus.desktop "${APPDIR}/usr/share/applications/ayus.desktop"
+cp "assets/${DESKTOP_ID}" "${APPDIR}/${DESKTOP_ID}"
+cp "assets/${DESKTOP_ID}" "${APPDIR}/usr/share/applications/${DESKTOP_ID}"
 
 if [ -f "assets/ayus.appdata.xml" ]; then
-    cp assets/ayus.appdata.xml "${APPDIR}/usr/share/metainfo/ayus.appdata.xml"
+    cp assets/ayus.appdata.xml "${APPDIR}/usr/share/metainfo/io.github.beratbesli.AYUS.appdata.xml"
 fi
 
 cp assets/ayus.png "${APPDIR}/ayus.png"
@@ -148,18 +149,21 @@ exec "${HERE}/usr/bin/A.Y.U.S" "$@"
 INNER_EOF
 chmod 755 "${APPDIR}/AppRun"
 
-APPIMAGETOOL=""
-if command -v appimagetool >/dev/null 2>&1; then
-    APPIMAGETOOL="appimagetool"
-elif [ -f "$HOME/.local/bin/appimagetool" ]; then
-    APPIMAGETOOL="$HOME/.local/bin/appimagetool"
-else
-    echo "appimagetool indiriliyor..."
-    mkdir -p "$HOME/.local/bin"
-    curl -fsSL -o "$HOME/.local/bin/appimagetool" "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-    chmod +x "$HOME/.local/bin/appimagetool"
-    APPIMAGETOOL="$HOME/.local/bin/appimagetool"
+APPIMAGETOOL_VERSION="1.9.1"
+APPIMAGETOOL_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+APPIMAGETOOL="${APPIMAGETOOL:-${SCRIPT_DIR}/.cache/appimagetool-${APPIMAGETOOL_VERSION}-x86_64.AppImage}"
+if [ ! -f "$APPIMAGETOOL" ]; then
+    echo "appimagetool ${APPIMAGETOOL_VERSION} indiriliyor..."
+    mkdir -p "$(dirname "$APPIMAGETOOL")"
+    curl --proto '=https' --tlsv1.2 -fsSL \
+        -o "$APPIMAGETOOL" \
+        "https://github.com/AppImage/appimagetool/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
 fi
+echo "${APPIMAGETOOL_SHA256}  ${APPIMAGETOOL}" | sha256sum --check --status || {
+    echo "Hata: appimagetool SHA-256 doğrulaması başarısız." >&2
+    exit 1
+}
+chmod +x "$APPIMAGETOOL"
 
 APPIMAGE_OUT="dist/${DISPLAY_NAME}-${VERSION}-${ARCH}.AppImage"
 ARCH="${ARCH}" "$APPIMAGETOOL" "$APPDIR" "$APPIMAGE_OUT"

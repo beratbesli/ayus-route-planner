@@ -1,0 +1,112 @@
+name: Package and release
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - "ayus/**"
+      - "assets/**"
+      - "A.Y.U.S..py"
+      - "ayus.spec"
+      - "paketle.*"
+      - "pyproject.toml"
+      - "requirements-build.txt"
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    name: Linux packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install system packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+      - name: Install locked packaging range
+        run: python -m pip install -r requirements-build.txt
+      - name: Build and smoke-test packages
+        run: |
+          ./paketle.sh
+          test -s dist/*.deb
+          test -s dist/*.AppImage
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ayus-linux
+          path: |
+            dist/*.deb
+            dist/*.AppImage
+          if-no-files-found: error
+          retention-days: 7
+
+  build-windows:
+    name: Windows package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout to a Windows-safe path
+        shell: pwsh
+        working-directory: ${{ runner.temp }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:GITHUB_TOKEN"))
+          git -c "http.extraheader=AUTHORIZATION: basic $auth" clone --no-tags "https://github.com/${{ github.repository }}.git" ayus
+          Set-Location ayus
+          git fetch --depth 1 origin $env:GITHUB_SHA
+          git checkout --detach $env:GITHUB_SHA
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.11"
+      - name: Install locked packaging range
+        working-directory: ${{ runner.temp }}\ayus
+        run: python -m pip install -r requirements-build.txt
+      - name: Build executable
+        working-directory: ${{ runner.temp }}\ayus
+        run: python -m PyInstaller --clean --noconfirm ayus.spec
+      - name: Prepare package
+        shell: pwsh
+        working-directory: ${{ runner.temp }}
+        run: |
+          New-Item -ItemType Directory -Force -Path package | Out-Null
+          Copy-Item ayus\dist\A.Y.U.S.exe package\A.Y.U.S.exe
+          Copy-Item ayus\depremfoto.png package\depremfoto.png
+          Copy-Item ayus\README.md package\README.md
+          Compress-Archive -Path package\* -DestinationPath A.Y.U.S.-windows.zip
+          if ((Get-Item A.Y.U.S.-windows.zip).Length -eq 0) { throw "Empty Windows archive" }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ayus-windows
+          path: ${{ runner.temp }}\A.Y.U.S.-windows.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: artifacts
+      - name: Generate checksums and publish all assets atomically
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          find artifacts -type f -print0 | sort -z | xargs -0 sha256sum > artifacts/SHA256SUMS
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "A.Y.U.S. $GITHUB_REF_NAME" --generate-notes
+          find artifacts -type f ! -name SHA256SUMS -print0 | \
+            xargs -0 gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$GITHUB_REF_NAME" artifacts/SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber
