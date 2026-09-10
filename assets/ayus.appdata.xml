@@ -5,7 +5,7 @@
   <project_license>MIT</project_license>
   <name>A.Y.U.S.</name>
   <summary>Görüntü tabanlı afet rota planlama prototipi</summary>
-  <url type="homepage">https://github.com/beratbesli/A.Y.U.S.</url>
+  <url type="homepage">https://github.com/beratbesli/ayus-route-planner</url>
   <developer id="io.github.beratbesli">
     <name>Berat Besli</name>
   </developer>

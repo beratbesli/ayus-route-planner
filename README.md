@@ -9,8 +9,8 @@ Görüntü tabanlı göreli risk haritası çıkaran ve geçilebilir alanlar üz
 Depoyu indirin:
 
 ```bash
-git clone https://github.com/beratbesli/A.Y.U.S..git
-cd A.Y.U.S.
+git clone https://github.com/beratbesli/ayus-route-planner.git
+cd ayus-route-planner
 ```
 
 **Windows:** `kurulum.bat` dosyasını, ardından `baslat.bat` dosyasını çalıştırın.

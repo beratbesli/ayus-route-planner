@@ -4,7 +4,7 @@
 
 Please do not publish exploitable details in a public issue. Use GitHub's private vulnerability reporting feature for this repository:
 
-<https://github.com/beratbesli/A.Y.U.S./security/advisories/new>
+<https://github.com/beratbesli/ayus-route-planner/security/advisories/new>
 
 Include the affected file/version, reproduction steps, impact, and a suggested mitigation. Do not include passwords, API keys, personal data, or live emergency-response information.
 
