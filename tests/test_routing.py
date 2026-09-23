@@ -1,10 +1,11 @@
 import networkx as nx
 import numpy as np
+import pytest
 
 from ayus.config import PlannerConfig
 from ayus.image_processing import GridSpec
 from ayus.metrics import path_length_pixels
-from ayus.routing import build_graph, generate_backup_routes, path_overlap_ratio
+from ayus.routing import build_graph, choose_endpoints, generate_backup_routes, path_overlap_ratio
 
 
 def _grid(height=20, width=30, rows=4, cols=5):
@@ -44,3 +45,34 @@ def test_backup_routes_are_not_duplicate_paths():
     routes = generate_backup_routes(graph, (0, 0), (3, 3), primary, config)
     assert len({tuple(route) for route in routes}) == len(routes)
     assert all(path_overlap_ratio(route, primary) <= 1.0 for route in routes)
+
+
+@pytest.mark.parametrize("fragmented", [False, True])
+def test_large_grid_endpoint_selection_reuses_distance_searches(monkeypatch, fragmented):
+    side = 80
+    graph = nx.grid_2d_graph(side, side)
+    if fragmented:
+        graph.remove_nodes_from((row, side // 2) for row in range(side))
+        start_target, end_target = (5, side // 2), (74, side // 2)
+    else:
+        start_target, end_target = (0, 0), (side - 1, side - 1)
+        graph.remove_nodes_from((start_target, end_target))
+    nx.set_node_attributes(graph, 1.0, "clearance")
+    nx.set_edge_attributes(graph, 1.0, "weight")
+    risk = np.zeros((side, side), dtype=np.float32)
+    clearance = np.ones((side, side), dtype=np.float32)
+
+    searches = 0
+    original_search = nx.single_source_dijkstra_path_length
+
+    def count_searches(*args, **kwargs):
+        nonlocal searches
+        searches += 1
+        return original_search(*args, **kwargs)
+
+    monkeypatch.setattr(nx, "single_source_dijkstra_path_length", count_searches)
+    start, end = choose_endpoints(graph, risk, clearance, start_target, end_target)
+
+    assert start in graph and end in graph
+    assert nx.has_path(graph, start, end)
+    assert 1 <= searches <= 25

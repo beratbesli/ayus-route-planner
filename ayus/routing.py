@@ -126,12 +126,17 @@ def choose_endpoints(
     ends = _rank_candidates(graph, end_target, risk_map, clearance_map)
     best = (float("inf"), None, None)
     for start_score, start in starts:
-        for end_score, end in ends:
-            if start == end or node_to_component[start] != node_to_component[end]:
-                continue
-            try:
-                corridor_cost = nx.shortest_path_length(graph, start, end, weight="weight")
-            except nx.NetworkXNoPath:
+        reachable_ends = [
+            (end_score, end)
+            for end_score, end in ends
+            if start != end and node_to_component[start] == node_to_component[end]
+        ]
+        if not reachable_ends:
+            continue
+        distances = nx.single_source_dijkstra_path_length(graph, start, weight="weight")
+        for end_score, end in reachable_ends:
+            corridor_cost = distances.get(end)
+            if corridor_cost is None:
                 continue
             endpoint_clearance = graph.nodes[start]["clearance"] + graph.nodes[end]["clearance"]
             score = corridor_cost + (start_score + end_score) * 3.5 - endpoint_clearance * 8.0
