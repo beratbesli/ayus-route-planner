@@ -39,7 +39,7 @@ jobs:
           ./paketle.sh
           test -s dist/*.deb
           test -s dist/*.AppImage
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ayus-linux
           path: |
@@ -82,7 +82,7 @@ jobs:
           Copy-Item ayus\README.md package\README.md
           Compress-Archive -Path package\* -DestinationPath A.Y.U.S.-windows.zip
           if ((Get-Item A.Y.U.S.-windows.zip).Length -eq 0) { throw "Empty Windows archive" }
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ayus-windows
           path: ${{ runner.temp }}\A.Y.U.S.-windows.zip
